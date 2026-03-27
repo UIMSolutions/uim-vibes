@@ -1,0 +1,26 @@
+{
+    "name": "hex-arch-mongo",
+    "description": "Hexagonal Architecture example with D, vibe.d and MongoDB",
+    "authors": ["oz"],
+    "license": "MIT",
+    "dependencies": {
+        "vibe-d": "~>0.10.1",
+        "vibe-d:mongodb": "~>0.10.1"
+    },
+    "versions": [
+        "VibeDefaultMain"
+    ],
+    "sourcePaths": ["source"],
+    "importPaths": ["source"],
+    "targetType": "executable",
+    "configurations": [
+        {
+            "name": "application",
+            "targetType": "executable"
+        },
+        {
+            "name": "unittest",
+            "targetType": "executable"
+        }
+    ]
+}

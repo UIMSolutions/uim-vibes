@@ -7,6 +7,7 @@ import domain.entities.user : User;
 import domain.repositories.user_repository : UserRepository;
 
 import vibe.db.postgresql;
+import dpq2 : QueryParams, ValueFormat, rangify;
 
 /// Adapter — PostgreSQL implementation of the UserRepository port.
 /// This is the only module that knows about PostgreSQL.
@@ -23,8 +24,8 @@ class PostgresUserRepository : UserRepository
     User[] findAll()
     {
         User[] users;
-        auto result = query("SELECT id, name, email, created_at, updated_at FROM users ORDER BY created_at");
-        foreach (row; result)
+        immutable result = execSQL("SELECT id, name, email, created_at, updated_at FROM users ORDER BY created_at");
+        foreach (row; rangify(result))
         {
             users ~= rowToUser(row);
         }
@@ -33,9 +34,9 @@ class PostgresUserRepository : UserRepository
 
     User* findById(string id)
     {
-        auto result = query(
+        auto result = execParams(
             "SELECT id, name, email, created_at, updated_at FROM users WHERE id = $1",
-            id
+            [id]
         );
         if (result.length == 0)
             return null;
@@ -46,44 +47,55 @@ class PostgresUserRepository : UserRepository
 
     void save(User user)
     {
-        query(
+        execParams(
             "INSERT INTO users (id, name, email, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)",
-            user.id, user.name, user.email,
-            user.createdAt.toISOExtString(), user.updatedAt.toISOExtString()
+            [user.id, user.name, user.email,
+             user.createdAt.toISOExtString(), user.updatedAt.toISOExtString()]
         );
     }
 
     void update(User user)
     {
-        query(
+        execParams(
             "UPDATE users SET name = $1, email = $2, updated_at = $3 WHERE id = $4",
-            user.name, user.email, user.updatedAt.toISOExtString(), user.id
+            [user.name, user.email, user.updatedAt.toISOExtString(), user.id]
         );
     }
 
     void remove(string id)
     {
-        query("DELETE FROM users WHERE id = $1", id);
+        execParams("DELETE FROM users WHERE id = $1", [id]);
     }
 
     // ── Helpers ──────────────────────────────────────────
 
-    private auto query(T...)(string sql, T params)
+    private immutable(Answer) execSQL(string sql)
     {
         return pool.pickConnection(
             (scope conn)
             {
-                static if (T.length == 0)
-                    return conn.exec(sql);
-                else
-                    return conn.execParams(sql, params);
+                return conn.exec(sql);
+            }
+        );
+    }
+
+    private immutable(Answer) execParams(string sql, string[] args)
+    {
+        QueryParams qp;
+        qp.sqlCommand = sql;
+        qp.argsFromArray(args);
+        qp.resultFormat = ValueFormat.TEXT;
+        return pool.pickConnection(
+            (scope conn)
+            {
+                return conn.execParams(qp);
             }
         );
     }
 
     private void ensureTable()
     {
-        query(
+        execSQL(
             "CREATE TABLE IF NOT EXISTS users ("
             ~ "id TEXT PRIMARY KEY, "
             ~ "name TEXT NOT NULL, "
