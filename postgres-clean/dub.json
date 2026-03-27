@@ -1,0 +1,26 @@
+{
+    "name": "clean-arch-postgres",
+    "description": "Clean Architecture example with D, vibe.d and PostgreSQL",
+    "authors": ["oz"],
+    "license": "MIT",
+    "dependencies": {
+        "vibe-d": "~>0.10.1",
+        "vibe-d-postgresql": "~>3.2.1"
+    },
+    "versions": [
+        "VibeDefaultMain"
+    ],
+    "sourcePaths": ["source"],
+    "importPaths": ["source"],
+    "targetType": "executable",
+    "configurations": [
+        {
+            "name": "application",
+            "targetType": "executable"
+        },
+        {
+            "name": "unittest",
+            "targetType": "executable"
+        }
+    ]
+}
